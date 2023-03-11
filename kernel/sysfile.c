@@ -533,7 +533,7 @@ sys_ps_list(void)
     argint(0, &limit);
     argaddr(1, &pids);
 
-    int* _pids = (int*) pids;
+    //int* _pids = (int*) pids;
 
     struct proc *p;
     int count = 0;
@@ -545,7 +545,8 @@ sys_ps_list(void)
         if(p->state == UNUSED)
             continue;
         if(index < limit){
-            _pids[index] = p->pid;
+            //_pids[index] = p->pid;
+            either_copyout(1, pids + index * sizeof(int), &p->pid, sizeof(int));
             index++;
         }
         count++;       
