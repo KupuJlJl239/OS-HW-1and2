@@ -523,3 +523,32 @@ sys_pipe(void)
   }
   return 0;
 }
+
+
+uint64 
+sys_ps_list(void)
+{
+    int limit; uint64 pids;
+
+    argint(0, &limit);
+    argaddr(1, &pids);
+
+    int* _pids = (int*) pids;
+
+    struct proc *p;
+    int count = 0;
+    int index = 0;
+
+    extern struct proc proc[NPROC];
+  
+    for(p = proc; p < &proc[NPROC]; p++) {
+        if(p->state == UNUSED)
+            continue;
+        if(index < limit){
+            _pids[index] = p->pid;
+            index++;
+        }
+        count++;       
+    }
+    return count;
+}
