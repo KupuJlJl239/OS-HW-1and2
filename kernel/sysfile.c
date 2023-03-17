@@ -546,10 +546,62 @@ sys_ps_list(void)
             continue;
         if(index < limit){
             //_pids[index] = p->pid;
+            //p->lock;
             either_copyout(1, pids + index * sizeof(int), &p->pid, sizeof(int));
             index++;
         }
         count++;       
     }
     return count;
+}
+
+
+
+
+uint64
+sys_ps_info(void){
+  int pid; uint64 psinfo;
+  argint(0, &pid); argaddr(1, &psinfo);
+
+  extern struct proc proc[NPROC];
+
+  struct proc *p;
+  for(p = proc; p < &proc[NPROC]; p++) {
+    if(p->pid == pid){
+      
+
+      // 1 - Заполняем информацию о процессе
+      struct process_info info;
+
+
+      // Состояние процесса
+      info.state = p->state;  
+
+      // Родитель процесса
+      if(p->parent) info.parent_id = p->parent->pid;
+      else          info.parent_id = 0;
+
+      // Объём памяти
+      info.memory = p->sz;
+
+      // Количество открытых файлов
+      info.files = 0;
+      for(int fd = 0; fd < NOFILE; fd++){
+        if(p->ofile[fd] != 0){
+          info.files += 1;
+        }
+      }
+
+      // Имя
+      either_copyout(0, (uint64)(&info.name), p->name, 16);
+
+
+
+      // 2 - Копируем эту структуру в пользовательский адрес
+      either_copyout(1, psinfo, &info, sizeof(info));
+
+    }
+  }
+
+  return 0;
 }
