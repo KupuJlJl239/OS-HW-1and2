@@ -20,5 +20,6 @@ struct process_info{
   int parent_id;
   uint64 memory;
   uint files;
+  uint ticks0;
   char name [16];
 };

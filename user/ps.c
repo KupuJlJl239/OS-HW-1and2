@@ -33,6 +33,7 @@ void print_proc(int pid){
 	printf("parent_id: %d\n", info.parent_id);
 	printf("memory: %d bytes\n", info.memory);
 	printf("open files: %d\n", info.files);
+	printf("ticks from start: %d\n", uptime() - info.ticks0);
 	printf("name: %s\n", info.name);
 	
 	//printf("%d %")
