@@ -38,13 +38,14 @@ const char* get_proc_state_str(int n){
 
 /*
 По pid процесса запрашивает у системы информацию о нём,
-а затем, если процесс используется, выводит её.
+а затем, если процесс существует, выводит её.
 */
 void print_proc(int pid){
 	struct process_info info;
 	ps_info(pid, &info);
-	if(info.state == 0)
+	if(ps_info(pid, &info) != 0) 
 		return;
+
 
 	printf("pid: %d\n", pid);
 	printf("state: %s\n", get_proc_state_str(info.state));

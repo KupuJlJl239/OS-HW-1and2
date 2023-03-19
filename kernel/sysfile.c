@@ -533,26 +533,26 @@ sys_ps_list(void)
     argint(0, &limit);
     argaddr(1, &pids);
 
-    //int* _pids = (int*) pids;
-
-    struct proc *p;
-    int count = 0;
-    int index = 0;
+    int count = 0;  // количество найденных на данный момент процессов
 
     extern struct proc proc[NPROC];
   
+    // Проходимся по всем записям процессов
+    struct proc *p;
     for(p = proc; p < &proc[NPROC]; p++) {
+
+        // Если эта запись не используется, пропускаем её
         acquire(&p->lock);
         if(p->state == UNUSED){
           release(&p->lock);
           continue;
         }
-        if(index < limit){
-            //_pids[index] = p->pid;
-            //p->lock;          
-            either_copyout(1, pids + index * sizeof(int), &p->pid, sizeof(int));
-            index++;
+
+        // Копируем pid процесса, если ещё есть место для записи
+        if(count < limit){         
+            either_copyout(1, pids + count * sizeof(int), &p->pid, sizeof(int));
         }
+
         release(&p->lock);
         count++;       
     }
@@ -560,17 +560,20 @@ sys_ps_list(void)
 }
 
 
-
-
 uint64
 sys_ps_info(void){
   int pid; uint64 psinfo;
-  argint(0, &pid); argaddr(1, &psinfo);
+
+  argint(0, &pid); 
+  argaddr(1, &psinfo);
 
   extern struct proc proc[NPROC];
 
+  // Проходимся по всем записям процессов
   struct proc *p;
   for(p = proc; p < &proc[NPROC]; p++) {
+
+    // Если это нужный нам процесс, делаем что надо и завершаемся
     acquire(&p->lock);
     if(p->pid == pid){
       
@@ -597,6 +600,7 @@ sys_ps_info(void){
         }
       }
 
+      // Информация о времени работы и времени создания, а также о количестве переключений контекста
       info.ticks0 = p->ticks0;
       info.running_ticks = p->running_ticks;
       info.switch_times = p->switch_times;
@@ -609,9 +613,15 @@ sys_ps_info(void){
       // 2 - Копируем эту структуру в пользовательский адрес
       either_copyout(1, psinfo, &info, sizeof(info));
 
+      release(&p->lock);
+      return 0;
+
     }
     release(&p->lock);
   }
 
-  return 0;
+  // Если так и не нашли нужный процесс, то возвращаем код ошибки
+  return -1;
 }
+
+
