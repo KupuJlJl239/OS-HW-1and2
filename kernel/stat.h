@@ -21,5 +21,7 @@ struct process_info{
   uint64 memory;
   uint files;
   uint ticks0;
+  uint running_ticks;
+  uint switch_times;
   char name [16];
 };

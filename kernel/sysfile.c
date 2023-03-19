@@ -542,17 +542,18 @@ sys_ps_list(void)
     extern struct proc proc[NPROC];
   
     for(p = proc; p < &proc[NPROC]; p++) {
-        // acquire(&p->lock);
-        if(p->state == UNUSED)
-            continue;
+        acquire(&p->lock);
+        if(p->state == UNUSED){
+          release(&p->lock);
+          continue;
+        }
         if(index < limit){
             //_pids[index] = p->pid;
-            //p->lock;
-            
+            //p->lock;          
             either_copyout(1, pids + index * sizeof(int), &p->pid, sizeof(int));
             index++;
         }
-        // release(&p->lock);
+        release(&p->lock);
         count++;       
     }
     return count;
@@ -570,7 +571,7 @@ sys_ps_info(void){
 
   struct proc *p;
   for(p = proc; p < &proc[NPROC]; p++) {
-    // acquire(&p->lock);
+    acquire(&p->lock);
     if(p->pid == pid){
       
 
@@ -597,6 +598,8 @@ sys_ps_info(void){
       }
 
       info.ticks0 = p->ticks0;
+      info.running_ticks = p->running_ticks;
+      info.switch_times = p->switch_times;
 
       // Имя
       either_copyout(0, (uint64)(&info.name), p->name, 16);
@@ -607,7 +610,7 @@ sys_ps_info(void){
       either_copyout(1, psinfo, &info, sizeof(info));
 
     }
-    // release(&p->lock);
+    release(&p->lock);
   }
 
   return 0;

@@ -23,20 +23,38 @@ int get_ps_list(int** pids){
 	return proc_count;
 }
 
+/*
+По номеру состояния процесса возвращает строку - человеческое название этого состояния
+*/
+const char* get_proc_state_str(int n){
+	if(n==0) return "UNUSED";
+	if(n==1) return "USED";
+	if(n==2) return "SLEEPING";
+	if(n==3) return "RUNNABLE";
+	if(n==4) return "RUNNING";
+	if(n==5) return "ZOMBIE";
+	return "SYSTEM ERROR: WRONG VALUE";
+}
 
+/*
+По pid процесса запрашивает у системы информацию о нём,
+а затем, если процесс используется, выводит её.
+*/
 void print_proc(int pid){
 	struct process_info info;
 	ps_info(pid, &info);
+	if(info.state == 0)
+		return;
 
 	printf("pid: %d\n", pid);
-	printf("state: %d\n", info.state);
+	printf("state: %s\n", get_proc_state_str(info.state));
 	printf("parent_id: %d\n", info.parent_id);
 	printf("memory: %d bytes\n", info.memory);
 	printf("open files: %d\n", info.files);
 	printf("ticks from start: %d\n", uptime() - info.ticks0);
+	printf("running ticks: %d\n", info.running_ticks);
+	printf("switch times: %d\n", info.switch_times);
 	printf("name: %s\n", info.name);
-	
-	//printf("%d %")
 }
 
 

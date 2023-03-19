@@ -150,6 +150,9 @@ found:
   p->ticks0 = ticks;
   release(&tickslock);
 
+  p->running_ticks = 0;
+  p->switch_times = 0;
+
   return p;
 }
 
@@ -463,8 +466,19 @@ scheduler(void)
         // to release its lock and then reacquire it
         // before jumping back to us.
         p->state = RUNNING;
+
+        acquire(&tickslock);
+        p->last_switch_tick = ticks;
+        release(&tickslock);
+
+        p->switch_times += 1;
+
         c->proc = p;
         swtch(&c->context, &p->context);
+
+        acquire(&tickslock);
+        p->running_ticks += ticks - p->last_switch_tick;
+        release(&tickslock);
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
