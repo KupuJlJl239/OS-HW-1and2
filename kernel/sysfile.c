@@ -568,6 +568,7 @@ sys_ps_info(void){
   argaddr(1, &psinfo);
 
   extern struct proc proc[NPROC];
+  extern struct spinlock wait_lock;
 
   // Проходимся по всем записям процессов
   struct proc *p;
@@ -586,8 +587,16 @@ sys_ps_info(void){
       info.state = p->state;  
 
       // Родитель процесса
-      if(p->parent) info.parent_id = p->parent->pid;
-      else          info.parent_id = 0;
+      acquire(&wait_lock);
+      if(p->parent){
+        acquire(&p->parent->lock);
+        info.parent_id = p->parent->pid;
+        release(&p->parent->lock);
+      }
+      else{
+        info.parent_id = 0;
+      }
+      release(&wait_lock);
 
       // Объём памяти
       info.memory = p->sz;
