@@ -1,8 +1,17 @@
 
 #include "kernel/types.h"
 #include "kernel/stat.h"
+#include "kernel/riscv.h"
 #include "user/user.h"
 
+
+void assert(int cond, const char* message){
+	if(!cond){
+		if(message)
+			printf("%s\n", message);
+		exit(-1);
+	}
+}
 
 /*
 Возвращает список процессов. 
@@ -12,10 +21,7 @@
 */
 int get_ps_list(int** pids){
 	int proc_count = ps_list(0, (int*) 0);
-	if(proc_count < 0){
-		printf("system error");
-		exit(-1);
-	}
+	assert(proc_count >= 0, "system error");
 	if(pids == 0)
 		return proc_count;
 	*pids = malloc(proc_count * sizeof(int));
@@ -58,21 +64,34 @@ void print_proc(int pid){
 	printf("name: %s\n", info.name);
 }
 
+void print_pte(int n, uint64 pte){
+
+	printf("%d %x\n", n, pte);
+}
+
+void print_pagetable(uint64* pt, int v){
+	for(int i = 0; i < 512; i++){
+		uint64 pte = pt[i];
+		if(pte & PTE_V){
+			print_pte(i, pte);
+		}
+	}
+}
 
 void
 main(int argc, const char *argv[]) {
-	if(argc != 2){
-		printf("wrong args count\n");
-		exit(-1);
-	}
+
+	assert(argc > 1, "not enough args");
 
 
 	if(!strcmp(argv[1], "count")){
+		assert(argc == 2, "too many args");
 		printf("%d\n", get_ps_list((int**)0));
 		exit(0);
 	}
 
 	if(!strcmp(argv[1], "pids")){
+		assert(argc == 2, "too many args");
 		int *pids; int proc_count = get_ps_list(&pids);
 
 		for(int i=0; i<proc_count; i++)
@@ -83,12 +102,43 @@ main(int argc, const char *argv[]) {
 	}
 
 	if(!strcmp(argv[1], "list")){
+		assert(argc == 2, "too many args");
 		int *pids; int proc_count = get_ps_list(&pids);
 		for(int i=0; i<proc_count; i++){
 			print_proc(pids[i]);
 			printf("\n");
 		}
 		free(pids); exit(0);
+	}
+
+	if(!strcmp(argv[1], "pt")){
+		assert(argc > 2, "not enough args");
+		if(!strcmp(argv[2], "0")){
+			assert(argc > 3, "not enough args");
+			int pid = atoi(argv[3]);
+			int v;
+			if(argc == 4){
+				v = 0;
+			}
+			else if(argc == 5){
+				if(!strcmp(argv[4], "-v"))
+					v = 1;
+				else	
+					assert(0, "wrong args");
+			}
+			else {
+				assert(0, "wrong args count");
+			}
+
+			uint64* pt = malloc(512 * sizeof(uint64));
+			
+			
+			ps_pt0(pid, pt);
+			print_pagetable(pt, v);
+
+			exit(0);
+			
+		}
 	}
 	
 	printf("wrong argument\n");

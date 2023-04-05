@@ -560,6 +560,21 @@ sys_ps_list(void)
 }
 
 
+struct proc* get_proc_by_pid(int pid){
+  extern struct proc proc[NPROC];
+  struct proc *p;
+  for(p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if(p->pid == pid){
+      release(&p->lock);
+      return p;
+    }
+    release(&p->lock);
+  }
+  return (struct proc*)0;
+}
+
+
 uint64
 sys_ps_info(void){
   int pid; uint64 psinfo;
@@ -631,6 +646,23 @@ sys_ps_info(void){
 
   // Если так и не нашли нужный процесс, то возвращаем код ошибки
   return -1;
+}
+
+
+
+uint64 
+sys_ps_pt0(void){
+  int pid; uint64 user_mem;
+  argint(0, &pid);
+  argaddr(1, &user_mem);
+
+  struct proc* p = get_proc_by_pid(pid);
+  if(!p)
+    return -1;
+
+  either_copyout(1, user_mem, p->pagetable, PGSIZE);
+
+  return 0;
 }
 
 

@@ -39,3 +39,4 @@ entry("uptime");
 entry("dummy");
 entry("ps_list");
 entry("ps_info");
+entry("ps_pt0");

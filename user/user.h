@@ -23,9 +23,11 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+
 int dummy(void);
 int ps_list(int limit, int* pids);
 int ps_info(int pid, struct process_info* );
+int ps_pt0(int pid, uint64* table);
 
 // ulib.c
 int stat(const char*, struct stat*);
