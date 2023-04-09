@@ -25,6 +25,9 @@
 #define SYS_ps_list  23
 #define SYS_ps_info  24
 #define SYS_ps_pt0  25
+#define SYS_ps_pt1  26
+#define SYS_ps_pt2  27
+//#define SYS_ps_pt3  28
 
 
 

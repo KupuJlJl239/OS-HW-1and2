@@ -66,13 +66,19 @@ void print_proc(int pid){
 
 void print_pte(int n, uint64 pte){
 
-	printf("%d %x\n", n, pte);
+	printf("%d %x %x ", n, pte, PTE2PA(pte));
+	if(pte & PTE_R)	printf("READ,");
+	if(pte & PTE_W)	printf("WRITE,");
+	if(pte & PTE_X)	printf("EXECUTE,");
+	if(pte & PTE_U)	printf("USER MODE,");
+	printf("\n");
+
 }
 
 void print_pagetable(uint64* pt, int v){
 	for(int i = 0; i < 512; i++){
 		uint64 pte = pt[i];
-		if(pte & PTE_V){
+		if(pte & PTE_V || v){
 			print_pte(i, pte);
 		}
 	}
@@ -116,11 +122,8 @@ main(int argc, const char *argv[]) {
 		if(!strcmp(argv[2], "0")){
 			assert(argc > 3, "not enough args");
 			int pid = atoi(argv[3]);
-			int v;
-			if(argc == 4){
-				v = 0;
-			}
-			else if(argc == 5){
+			int v = 0;
+			if(argc == 5){
 				if(!strcmp(argv[4], "-v"))
 					v = 1;
 				else	
@@ -129,15 +132,29 @@ main(int argc, const char *argv[]) {
 			else {
 				assert(0, "wrong args count");
 			}
-
-			uint64* pt = malloc(512 * sizeof(uint64));
-			
-			
-			ps_pt0(pid, pt);
+			uint64* pt = malloc(512 * sizeof(uint64));		
+			assert(ps_pt0(pid, pt) == 0, "wrong pid");
 			print_pagetable(pt, v);
-
-			exit(0);
-			
+			exit(0);		
+		}
+		else if(!strcmp(argv[2], "1")){
+			assert(argc > 3, "not enough args");
+			int pid = atoi(argv[3]);
+			void* addr = (void*)(uint64)atoi(argv[4]);
+			int v = 0;
+			if(argc == 6){
+				if(!strcmp(argv[4], "-v"))
+					v = 1;
+				else	
+					assert(0, "wrong args");
+			}
+			else {
+				assert(0, "wrong args count");
+			}
+			uint64* pt = malloc(512 * sizeof(uint64));		
+			assert(ps_pt1(pid, addr, pt) == 0, "pagetable doesn't exist");
+			print_pagetable(pt, v);
+			exit(0);		
 		}
 	}
 	

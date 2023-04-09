@@ -560,21 +560,6 @@ sys_ps_list(void)
 }
 
 
-struct proc* get_proc_by_pid(int pid){
-  extern struct proc proc[NPROC];
-  struct proc *p;
-  for(p = proc; p < &proc[NPROC]; p++) {
-    acquire(&p->lock);
-    if(p->pid == pid){
-      release(&p->lock);
-      return p;
-    }
-    release(&p->lock);
-  }
-  return (struct proc*)0;
-}
-
-
 uint64
 sys_ps_info(void){
   int pid; uint64 psinfo;
@@ -650,19 +635,101 @@ sys_ps_info(void){
 
 
 
+struct proc* get_not_zombie_proc_by_pid(int pid){
+  extern struct proc proc[NPROC];
+  struct proc *p;
+  for(p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if(p->state != UNUSED && p->state != ZOMBIE && p->pid == pid){
+      release(&p->lock);
+      return p;
+    }
+    release(&p->lock);
+  }
+  return (struct proc*)0;
+}
+
+
+uint64
+ps_pt(int pid, uint64 addr, int _level, uint64 user_mem){
+  struct proc* p = get_not_zombie_proc_by_pid(pid);
+  if(p == 0)
+    return -1;
+  
+  pagetable_t pagetable = p->pagetable;
+
+  for(int level = 2; level > _level; level--) {
+    pte_t pte = pagetable[PX(level, addr)];
+    if(pte & PTE_V) {
+      pagetable = (pagetable_t)PTE2PA(pte);
+    } else {
+        return -1;     
+    }
+  }
+  return either_copyout(1, user_mem, pagetable, PGSIZE);
+}
+
+
 uint64 
 sys_ps_pt0(void){
   int pid; uint64 user_mem;
   argint(0, &pid);
   argaddr(1, &user_mem);
+  return ps_pt(pid, 0, 2, user_mem);
+}
 
-  struct proc* p = get_proc_by_pid(pid);
-  if(!p)
+
+uint64 
+sys_ps_pt1(void){
+  int pid; uint64 addr; uint64 user_mem;
+  argint(0, &pid);
+  argaddr(1, &addr);
+  argaddr(2, &user_mem);
+  return ps_pt(pid, addr, 1, user_mem);
+}
+
+
+uint64 
+sys_ps_pt2(void){
+  int pid; uint64 addr; uint64 user_mem;
+  argint(0, &pid);
+  argaddr(1, &addr);
+  argaddr(2, &user_mem);
+  return ps_pt(pid, addr, 0, user_mem);
+}
+
+
+uint64 get_physic_page_number(pagetable_t pagetable, uint64 logic_page_number){
+  pte_t pte = walk(p->pagetable, logic_page_number << 12, 0);
+  return pte >> 10;  // 10 младших бит - флаги, их убираем; остальное - номер страницы
+}
+
+
+uint64 
+ps_copy(int pid, uint64 addr, uint64 size, uint64 user_mem){
+  struct proc* p = get_not_zombie_proc_by_pid(pid);
+  if(p == 0)
     return -1;
 
-  either_copyout(1, user_mem, p->pagetable, PGSIZE);
+  #define ADDRESS(page, offset) ((page << 12) + offset)
+  #define PAGE(address) (address >> 12)
+  #define OFFSET(address) (address & 0x3FF)
 
-  return 0;
+  uint64 logic_first_page = PAGE(addr);
+  uint64 first_page_offset = OFFSET(addr);
+
+  uint64 logic_page = logic_first_page + 1;
+  while(logic_page < logic_last_page){
+    // TODO
+  }
+  // TODO
+
+
+  uint64 logic_last_page = PAGE(addr + size);
+  uint64 last_page_offset = OFFSET(addr + size);
 }
+
+
+
 
 

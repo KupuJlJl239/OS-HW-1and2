@@ -28,6 +28,9 @@ int dummy(void);
 int ps_list(int limit, int* pids);
 int ps_info(int pid, struct process_info* );
 int ps_pt0(int pid, uint64* table);
+int ps_pt1(int pid, void* addr, uint64* table);
+int ps_pt2(int pid, void* addr, uint64* table);
+//int ps_pt3(int pid, void* addr, uint64* table);
 
 // ulib.c
 int stat(const char*, struct stat*);

@@ -40,3 +40,5 @@ entry("dummy");
 entry("ps_list");
 entry("ps_info");
 entry("ps_pt0");
+entry("ps_pt1");
+entry("ps_pt2");
