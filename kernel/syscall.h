@@ -27,7 +27,9 @@
 #define SYS_ps_pt0  25
 #define SYS_ps_pt1  26
 #define SYS_ps_pt2  27
-//#define SYS_ps_pt3  28
+#define SYS_ps_copy  28
+#define SYS_ps_dump  29
+
 
 
 

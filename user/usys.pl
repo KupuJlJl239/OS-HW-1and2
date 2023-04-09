@@ -42,3 +42,5 @@ entry("ps_info");
 entry("ps_pt0");
 entry("ps_pt1");
 entry("ps_pt2");
+entry("ps_copy");
+entry("ps_dump");

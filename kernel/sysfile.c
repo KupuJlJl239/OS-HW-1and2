@@ -700,8 +700,10 @@ sys_ps_pt2(void){
 
 
 uint64 get_physic_page_number(pagetable_t pagetable, uint64 logic_page_number){
-  pte_t pte = walk(p->pagetable, logic_page_number << 12, 0);
-  return pte >> 10;  // 10 младших бит - флаги, их убираем; остальное - номер страницы
+  pte_t pte = *walk(pagetable, logic_page_number << 12, 0);
+  if(pte == 0)
+    return -1;
+  return (pte >> 10);  // 10 младших бит - флаги, их убираем; остальное - номер страницы
 }
 
 
@@ -711,22 +713,89 @@ ps_copy(int pid, uint64 addr, uint64 size, uint64 user_mem){
   if(p == 0)
     return -1;
 
-  #define ADDRESS(page, offset) ((page << 12) + offset)
-  #define PAGE(address) (address >> 12)
-  #define OFFSET(address) (address & 0x3FF)
+  #define ADDRESS(page, offset) (((page) << 12) + (offset))  //
+  #define PAGE(address) ((address) >> 12)    //
+  #define OFFSET(address) ((address) & 0xFFF)  //
 
+  // Получаем данные о первой странице
   uint64 logic_first_page = PAGE(addr);
+  uint64 physic_first_page = get_physic_page_number(p->pagetable, logic_first_page);
+  if(physic_first_page == -1)
+    return -1;
   uint64 first_page_offset = OFFSET(addr);
 
+  // Получаем данные о последней
+  uint64 logic_last_page = PAGE(addr + size);
+  uint64 physic_last_page = get_physic_page_number(p->pagetable, logic_first_page);
+  if(physic_last_page == -1)
+    return -1;
+  uint64 last_page_offset = OFFSET(addr + size);
+
+  // Если вся память в одной странице - это особая ситуация
+  if(logic_first_page == logic_last_page){
+    uint64 physic_address = ADDRESS(physic_first_page, first_page_offset);
+    return either_copyout(1, user_mem, (void*)physic_address, size);
+  }
+
+
+  // Указатель, куда копируем
+  uint64 current_user_address = user_mem;
+
+  // Копирует кусок длины size из физического адреса, переставляя при этом указатель, куда копировать дальше
+  #define COPY(physic_address, size) \
+  do { \
+    if(either_copyout(1, current_user_address, (void*)(physic_address), (size)) != 0) \
+      return -1; \
+    current_user_address += (size); \
+  } while(0)
+
+  // Копирует страницу целиком
+  #define COPY_PAGE(physic_page) COPY(ADDRESS((physic_page), 0), PGSIZE)
+
+
+  // Копируем кусок из конца первой страницы
+  COPY(ADDRESS(physic_first_page, first_page_offset), PGSIZE - first_page_offset);
+
+  // Копируем целиком промежуточные логические страницы
   uint64 logic_page = logic_first_page + 1;
   while(logic_page < logic_last_page){
-    // TODO
+    uint64 physic_page = get_physic_page_number(p->pagetable, logic_page);
+    if(physic_page == -1)
+      return -1;
+    COPY_PAGE(physic_page);
   }
-  // TODO
+
+  // Копируем кусок из начала последней страницы
+  COPY(ADDRESS(physic_last_page, 0), last_page_offset);
+
+  return 0;
+
+  #undef COPY_PAGE
+  #undef COPY
+  #undef OFFSET
+  #undef ADDRESS
+  #undef PAGE
+
+}
 
 
-  uint64 logic_last_page = PAGE(addr + size);
-  uint64 last_page_offset = OFFSET(addr + size);
+uint64 
+sys_ps_copy(void){
+  int pid; uint64 addr; int size; uint64 user_mem;
+  argint(0, &pid);
+  argaddr(1, &addr);
+  argint(2, &size);
+  argaddr(3, &user_mem);
+
+  return ps_copy(pid, addr, size, user_mem);
+
+}
+
+
+uint64 
+sys_ps_dump(void){
+  // TODO!
+  return 0;
 }
 
 

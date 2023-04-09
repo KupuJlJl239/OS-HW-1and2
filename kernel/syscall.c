@@ -108,7 +108,8 @@ extern uint64 sys_ps_info(void);
 extern uint64 sys_ps_pt0(void);
 extern uint64 sys_ps_pt1(void);
 extern uint64 sys_ps_pt2(void);
-//extern uint64 sys_ps_pt3(void);
+extern uint64 sys_ps_copy(void);
+extern uint64 sys_ps_dump(void);
 
 
 // An array mapping syscall numbers from syscall.h
@@ -142,7 +143,8 @@ static uint64 (*syscalls[])(void) = {
 [SYS_ps_pt0]  sys_ps_pt0,
 [SYS_ps_pt1]  sys_ps_pt1,
 [SYS_ps_pt2]  sys_ps_pt2,
-//[SYS_ps_pt3]  sys_ps_pt3,
+[SYS_ps_copy]  sys_ps_copy,
+[SYS_ps_dump]  sys_ps_dump,
 };
 
 void

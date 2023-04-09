@@ -129,9 +129,6 @@ main(int argc, const char *argv[]) {
 				else	
 					assert(0, "wrong args");
 			}
-			else {
-				assert(0, "wrong args count");
-			}
 			uint64* pt = malloc(512 * sizeof(uint64));		
 			assert(ps_pt0(pid, pt) == 0, "wrong pid");
 			print_pagetable(pt, v);
@@ -148,11 +145,24 @@ main(int argc, const char *argv[]) {
 				else	
 					assert(0, "wrong args");
 			}
-			else {
-				assert(0, "wrong args count");
-			}
 			uint64* pt = malloc(512 * sizeof(uint64));		
 			assert(ps_pt1(pid, addr, pt) == 0, "pagetable doesn't exist");
+			print_pagetable(pt, v);
+			exit(0);		
+		}
+		else if(!strcmp(argv[2], "2")){
+			assert(argc > 3, "not enough args");
+			int pid = atoi(argv[3]);
+			void* addr = (void*)(uint64)atoi(argv[4]);
+			int v = 0;
+			if(argc == 6){
+				if(!strcmp(argv[4], "-v"))
+					v = 1;
+				else	
+					assert(0, "wrong args");
+			}
+			uint64* pt = malloc(512 * sizeof(uint64));		
+			assert(ps_pt2(pid, addr, pt) == 0, "pagetable doesn't exist");
 			print_pagetable(pt, v);
 			exit(0);		
 		}
