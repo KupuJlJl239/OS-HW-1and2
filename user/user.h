@@ -30,7 +30,7 @@ int ps_info(int pid, struct process_info* );
 int ps_pt0(int pid, uint64* table);
 int ps_pt1(int pid, void* addr, uint64* table);
 int ps_pt2(int pid, void* addr, uint64* table);
-int ps_copy(int pid, void* addr, int size, void* table);
+int ps_copy(int pid, void* addr, int size, void* data);
 int ps_dump(void);
 
 // ulib.c

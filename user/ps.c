@@ -3,6 +3,7 @@
 #include "kernel/stat.h"
 #include "kernel/riscv.h"
 #include "user/user.h"
+#include <stddef.h>
 
 
 void assert(int cond, const char* message){
@@ -84,6 +85,13 @@ void print_pagetable(uint64* pt, int v){
 	}
 }
 
+void print_dump(void* dump, int address, int size){
+	char* data = dump;
+	for(int i = 0; i < size; i++){
+		printf("%x: %x\n", address + i, data[i]);
+	}
+}
+
 void
 main(int argc, const char *argv[]) {
 
@@ -135,7 +143,7 @@ main(int argc, const char *argv[]) {
 			exit(0);		
 		}
 		else if(!strcmp(argv[2], "1")){
-			assert(argc > 3, "not enough args");
+			assert(argc > 4, "not enough args");
 			int pid = atoi(argv[3]);
 			void* addr = (void*)(uint64)atoi(argv[4]);
 			int v = 0;
@@ -151,7 +159,7 @@ main(int argc, const char *argv[]) {
 			exit(0);		
 		}
 		else if(!strcmp(argv[2], "2")){
-			assert(argc > 3, "not enough args");
+			assert(argc > 4, "not enough args");
 			int pid = atoi(argv[3]);
 			void* addr = (void*)(uint64)atoi(argv[4]);
 			int v = 0;
@@ -166,6 +174,20 @@ main(int argc, const char *argv[]) {
 			print_pagetable(pt, v);
 			exit(0);		
 		}
+	}
+
+	if(!strcmp(argv[1], "dump")){
+		assert(argc > 4, "not enough args");
+		int pid = atoi(argv[2]);
+		int address = atoi(argv[3]);
+		int size = atoi(argv[4]);
+		assert(address >= 0, NULL);
+		assert(size >= 0, NULL);
+		void* dump = malloc(size);
+		assert(ps_copy(pid, (void*)(uint64)address, size, dump) == 0, 
+			"pid is invalid or some addresses in this range are invalid in target process");
+		print_dump(dump, address, size);
+		exit(0);
 	}
 	
 	printf("wrong argument\n");
